@@ -68,7 +68,7 @@ if not exist "venv" (
 )
 
 :: Ativa venv
-call venv\Scripts\activate.bat
+call ./venv/Scripts/activate
 
 :: ─────────────────────────────────────────────────────
 :: 4. INSTALA DEPENDENCIAS PYTHON
