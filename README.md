@@ -33,8 +33,8 @@ cd NoMoreCloudsSAT
 ### Windows
 
 ```
-setup.bat        ← instala Python, Node.js, venv e todas as dependências
-run.bat          ← inicia backend + frontend e abre o navegador
+./setup.bat        ← instala Python, Node.js, venv e todas as dependências
+./run.bat          ← inicia backend + frontend e abre o navegador
 ```
 
 ### Linux / Mac
