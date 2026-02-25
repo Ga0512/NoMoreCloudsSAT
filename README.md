@@ -18,6 +18,17 @@ WebApp local para download e composição de imagens de satélite com máscara d
 - [Google Earth Engine](https://earthengine.google.com/) — cadastre-se e ative a API
 - [Copernicus Data Space](https://dataspace.copernicus.eu/) — crie uma conta gratuita
 - Planetary Computer — **sem conta necessária**
+- [Git](https://git-scm.com/install/windows) - Se você ainda não baixou o git
+
+### Clone o repositório e entre na pasta:
+
+```
+git clone https://github.com/Ga0512/NoMoreCloudsSAT.git
+```
+
+```
+cd NoMoreCloudsSAT
+```
 
 ### Windows
 
