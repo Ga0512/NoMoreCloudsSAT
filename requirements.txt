@@ -1,17 +1,13 @@
-# ═══ Backend (FastAPI) ═══
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
 python-multipart==0.0.9
 requests==2.32.3
 
-# ═══ Google Earth Engine ═══
 earthengine-api==1.1.0
 
-# ═══ Copernicus OpenEO ═══
 openeo==0.33.0
 urllib3>=2.0.0
 
-# ═══ Planetary Computer (Microsoft) ═══
 pystac-client==0.8.4
 planetary-computer==1.0.0
 stackstac==0.5.1
@@ -20,7 +16,6 @@ xarray>=2024.1.0
 dask[array]>=2024.1.0
 numpy>=1.26.0
 
-# ═══ Utilitários geo ═══
 fiona==1.10.1
 shapely==2.0.6
 rasterio==1.4.3
