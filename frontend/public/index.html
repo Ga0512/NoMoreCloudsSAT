@@ -37,7 +37,7 @@
                     <button class="btn btn-secondary btn-sm" onclick="authGee()">Login GEE</button>
                     <button class="btn btn-secondary btn-sm" onclick="authCopernicus()">Login Copernicus</button>
                 </div>
-                <label for="geeProject">Projeto GEE (opcional)</label>
+                <label for="geeProject">Projeto GEE (Obrigatório)</label>
                 <input type="text" id="geeProject" placeholder="ex: my-gee-project">
             </div>
 
@@ -47,9 +47,11 @@
                 <select id="provider" onchange="onProviderChange()">
                     <option value="gee_sentinel">GEE — Sentinel-2 (10m)</option>
                     <option value="gee_landsat">GEE — Landsat 8/9 (30m)</option>
+                    <option value="gee_embedding">GEE — AlphaEarth Embedding (10m, 64d)</option>
                     <option value="copernicus">Copernicus OpenEO — Sentinel-2</option>
                     <option value="planetary">Planetary Computer — Landsat 8/9</option>
                 </select>
+                <p id="providerHint" class="provider-hint"></p>
             </div>
 
             <!-- AOI -->
@@ -108,15 +110,17 @@
                     </div>
                 </div>
 
-                <label for="bands">Bandas (separadas por vírgula)</label>
-                <input type="text" id="bands" placeholder="deixe vazio para padrão">
+                <div id="bandsContainer">
+                    <label for="bands">Bandas (separadas por vírgula)</label>
+                    <input type="text" id="bands" placeholder="deixe vazio para padrão">
+                </div>
 
                 <div class="input-row">
                     <div>
                         <label for="resolution">Resolução (m)</label>
                         <input type="number" id="resolution" placeholder="auto" min="1">
                     </div>
-                    <div>
+                    <div id="maxCloudContainer">
                         <label for="maxCloud">Nuvens Máx. (%)</label>
                         <input type="number" id="maxCloud" value="30" min="0" max="100">
                     </div>

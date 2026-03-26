@@ -2,12 +2,8 @@
 FastAPI backend para o Satellite Image Compositor.
 Endpoints para autenticação, upload de AOI, processamento e download.
 """
-import os
-import json
-import shutil
 import logging
 import threading
-import tempfile
 from pathlib import Path
 from datetime import datetime
 from typing import Optional, List
@@ -212,7 +208,7 @@ async def start_processing(req: ProcessingRequest):
     # Verifica autenticação
     from .services import gee, copernicus
 
-    if provider in (ProviderEnum.GEE_SENTINEL, ProviderEnum.GEE_LANDSAT):
+    if provider in (ProviderEnum.GEE_SENTINEL, ProviderEnum.GEE_LANDSAT, ProviderEnum.GEE_EMBEDDING):
         if not gee.is_authenticated():
             raise HTTPException(status_code=401, detail="GEE não autenticado.")
     elif provider == ProviderEnum.COPERNICUS:
@@ -229,6 +225,9 @@ async def start_processing(req: ProcessingRequest):
     elif provider == ProviderEnum.GEE_LANDSAT:
         bands = bands or ["SR_B2", "SR_B3", "SR_B4", "SR_B5"]
         resolution = resolution or DEFAULT_RESOLUTION["gee_landsat"]
+    elif provider == ProviderEnum.GEE_EMBEDDING:
+        bands = bands or [f"A{i:02d}" for i in range(64)]
+        resolution = resolution or 10
     elif provider == ProviderEnum.COPERNICUS:
         bands = bands or DEFAULT_BANDS["copernicus"]
         resolution = resolution or DEFAULT_RESOLUTION["copernicus"]
@@ -279,6 +278,17 @@ async def start_processing(req: ProcessingRequest):
                     bands=bands,
                     scale=resolution,
                     max_cloud=req.max_cloud,
+                    output_path=output_path,
+                    progress_callback=progress_callback,
+                )
+
+            elif provider == ProviderEnum.GEE_EMBEDDING:
+                gee.process_embedding(
+                    aoi_geojson=geometry,
+                    start_date=req.start_date,
+                    end_date=req.end_date,
+                    bands=bands,
+                    scale=resolution,
                     output_path=output_path,
                     progress_callback=progress_callback,
                 )

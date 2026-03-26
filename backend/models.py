@@ -10,6 +10,7 @@ from datetime import datetime
 class ProviderEnum(str, Enum):
     GEE_SENTINEL = "gee_sentinel"
     GEE_LANDSAT = "gee_landsat"
+    GEE_EMBEDDING = "gee_embedding"
     COPERNICUS = "copernicus"
     PLANETARY = "planetary"
 

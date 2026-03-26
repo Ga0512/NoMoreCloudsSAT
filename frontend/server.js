@@ -39,10 +39,10 @@ app.get("*", (req, res) => {
 
 // ── Start ───────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`\n╔══════════════════════════════════════════════╗`);
+  console.log(`╔══════════════════════════════════════════════╗`);
   console.log(`║   Satellite Image Compositor — Frontend      ║`);
   console.log(`╠══════════════════════════════════════════════╣`);
-  console.log(`║   URL:     http://localhost:${PORT}             ║`);
-  console.log(`║   API:     ${API_TARGET}              ║`);
-  console.log(`╚══════════════════════════════════════════════╝\n`);
+  console.log(`║   URL:     http://localhost:${PORT}          ║`);
+  console.log(`║   API:     ${API_TARGET}                     ║`);
+  console.log(`╚══════════════════════════════════════════════╝`);
 });

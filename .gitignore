@@ -1,4 +1,4 @@
-backend/venv/
+venv/
 backend/__pycache__/
 frontend/node_modules/
 outputs/

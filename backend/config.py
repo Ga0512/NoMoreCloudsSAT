@@ -27,6 +27,7 @@ PLANETARY_STAC_URL = "https://planetarycomputer.microsoft.com/api/stac/v1"
 # Bandas padrão por provedor
 DEFAULT_BANDS = {
     "gee": ["B2", "B3", "B4", "B8"],
+    "gee_embedding": [f"A{i:02d}" for i in range(64)],
     "copernicus": ["B02", "B03", "B04", "B08"],
     "planetary": ["blue", "green", "red", "nir08"],
 }
@@ -34,6 +35,7 @@ DEFAULT_BANDS = {
 # Resoluções padrão
 DEFAULT_RESOLUTION = {
     "gee_sentinel": 10,
+    "gee_embedding": 10,
     "gee_landsat": 30,
     "copernicus": 10,
     "planetary": 30,

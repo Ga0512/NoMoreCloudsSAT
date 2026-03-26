@@ -66,7 +66,6 @@ map.on(L.Draw.Event.CREATED, (e) => {
     const geojson = e.layer.toGeoJSON().geometry;
     const name = `Área ${aoiCounter + 1}`;
     addAoi(name, geojson);
-    // Não adiciona ao drawnItems (gerenciamos pelo aoiLayerGroup)
 });
 
 // ═══════════════════════════════════════════════════════
@@ -366,7 +365,6 @@ async function authCopernicus() {
         if (!resp.ok) {
             const detail = data.detail || data;
             const msg = typeof detail === "string" ? detail : detail.detail || "Erro";
-            // Mesmo com erro, pode ter URL para mostrar
             if (typeof detail === "object") showDeviceFlowInfo(detail);
             throw new Error(msg);
         }
@@ -387,7 +385,6 @@ function showDeviceFlowInfo(data) {
     const code = data.user_code;
     if (!uri && !code) return;
 
-    // Remove painel anterior se existir
     hideDeviceFlowInfo();
 
     const panel = document.createElement("div");
@@ -411,7 +408,6 @@ function showDeviceFlowInfo(data) {
         <button class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="hideDeviceFlowInfo()">Fechar</button>
     `;
 
-    // Insere após o botão de login copernicus
     const sidebar = document.querySelector(".sidebar");
     const authPanel = sidebar.querySelector(".panel");
     authPanel.after(panel);
@@ -428,24 +424,64 @@ function hideDeviceFlowInfo() {
 
 function onProviderChange() {
     const provider = document.getElementById("provider").value;
-    const cloudProbContainer = document.getElementById("cloudProbContainer");
+    const isEmbedding = provider === "gee_embedding";
 
-    cloudProbContainer.style.display =
+    // Cloud prob: só GEE Sentinel
+    document.getElementById("cloudProbContainer").style.display =
         provider === "gee_sentinel" ? "block" : "none";
 
+    // Max cloud: esconde para embedding (não usa cloud masking)
+    document.getElementById("maxCloudContainer").style.display =
+        isEmbedding ? "none" : "block";
+
+    // Bandas: para embedding as 64 bandas são o padrão, campo menos relevante
     const bandsInput = document.getElementById("bands");
     const resInput = document.getElementById("resolution");
 
     const defaults = {
-        gee_sentinel: { bands: "B2, B3, B4, B8", res: 10 },
-        gee_landsat: { bands: "SR_B2, SR_B3, SR_B4, SR_B5", res: 30 },
-        copernicus: { bands: "B02, B03, B04, B08", res: 10 },
-        planetary: { bands: "blue, green, red, nir08", res: 30 },
+        gee_sentinel: { bands: "B2, B3, B4, B8", res: 10, hint: "" },
+        gee_landsat:  { bands: "SR_B2, SR_B3, SR_B4, SR_B5", res: 30, hint: "" },
+        gee_embedding: {
+            bands: "A00–A63 (64 dimensões)",
+            res: 10,
+            hint: "AlphaEarth Foundations (Google/DeepMind). Embeddings anuais de 64 dimensões, "
+                + "10m. Não requer cloud masking. Use datas anuais: ex. 2024-01-01 a 2025-01-01. "
+                + "Disponível de 2017 a 2024.",
+        },
+        copernicus: { bands: "B02, B03, B04, B08", res: 10, hint: "" },
+        planetary:  { bands: "blue, green, red, nir08", res: 30, hint: "" },
     };
 
     const d = defaults[provider];
     bandsInput.placeholder = d ? `padrão: ${d.bands}` : "";
     resInput.placeholder = d ? d.res : "auto";
+
+    // Hint do provedor
+    const hintEl = document.getElementById("providerHint");
+    if (hintEl) {
+        hintEl.textContent = d?.hint || "";
+        hintEl.style.display = d?.hint ? "block" : "none";
+    }
+
+    // Para embedding, sugere datas anuais se as atuais parecem sub-anuais
+    if (isEmbedding) {
+        const startEl = document.getElementById("startDate");
+        const endEl = document.getElementById("endDate");
+        const start = startEl.value;
+        const end = endEl.value;
+
+        // Se o range é < 365 dias, sugere ajustar
+        if (start && end) {
+            const diffDays = (new Date(end) - new Date(start)) / (1000 * 60 * 60 * 24);
+            if (diffDays < 360) {
+                // Auto-ajusta para ano completo baseado na data inicial
+                const year = new Date(start).getFullYear();
+                startEl.value = `${year}-01-01`;
+                endEl.value = `${year + 1}-01-01`;
+                toast(`Embedding é anual — datas ajustadas para ${year}-01-01 → ${year + 1}-01-01`, "info");
+            }
+        }
+    }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -459,6 +495,7 @@ async function startProcessing() {
     }
 
     const provider = document.getElementById("provider").value;
+    const isEmbedding = provider === "gee_embedding";
     const startDate = document.getElementById("startDate").value;
     const endDate = document.getElementById("endDate").value;
     const bandsRaw = document.getElementById("bands").value.trim();
@@ -485,9 +522,13 @@ async function startProcessing() {
             aoi_geojson: aoi.geojson,
             start_date: startDate,
             end_date: endDate,
-            max_cloud: maxCloud,
-            cloud_prob_threshold: cloudProb,
         };
+
+        // Cloud params só para provedores que usam
+        if (!isEmbedding) {
+            body.max_cloud = maxCloud;
+            body.cloud_prob_threshold = cloudProb;
+        }
 
         if (bandsRaw) {
             body.bands = bandsRaw.split(",").map((b) => b.trim()).filter(Boolean);
@@ -547,7 +588,6 @@ function startJobPolling(jobId) {
             } else if (job.status === "failed") {
                 clearInterval(intervalId);
                 delete pollingIntervals[jobId];
-                // Detecta erros de token expirado
                 const msg = job.message || "";
                 const isTokenError = msg.toLowerCase().includes("token") ||
                     msg.toLowerCase().includes("expirado") ||
@@ -556,7 +596,7 @@ function startJobPolling(jobId) {
                     msg.toLowerCase().includes("não autenticado");
                 if (isTokenError) {
                     toast(`Job ${jobId}: Token expirado. Faça login novamente.`, "error");
-                    checkAuthStatus(); // Atualiza indicadores
+                    checkAuthStatus();
                 } else {
                     toast(`Job ${jobId} falhou: ${msg}`, "error");
                 }

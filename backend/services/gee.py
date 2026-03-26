@@ -202,6 +202,7 @@ def process_sentinel(
             "region": aoi,
             "format": "GEO_TIFF",
             "filePerBand": False,
+            "maxPixels": 1e13
         })
     except Exception as e:
         # Se a área for muito grande, usa Export.image.toDrive como fallback
@@ -347,6 +348,113 @@ def process_landsat(
                 update(min(dl_pct, 95), f"Baixando... {downloaded // 1024} KB")
 
     update(96, "Recortando para o polígono exato da AOI...")
+    from ..utils import clip_raster_to_geojson
+    clip_raster_to_geojson(output_path, aoi_geojson, output_path)
+
+    update(100, "Concluído!")
+    return output_path
+
+
+def process_embedding(
+    aoi_geojson: Dict[str, Any],
+    start_date: str,
+    end_date: str,
+    bands: Optional[List[str]] = None,
+    scale: int = 10,
+    output_path: str = "embedding.tif",
+    progress_callback=None,
+) -> str:
+    """
+
+    Args:
+        aoi_geojson: GeoJSON da área de interesse (Polygon)
+        start_date: data inicial (YYYY-MM-DD), tipicamente início do ano (ex: '2024-01-01')
+        end_date: data final (YYYY-MM-DD), tipicamente início do próximo ano (ex: '2025-01-01')
+        bands: lista de bandas a exportar (ex: ['A00','A01',...,'A63']).
+               Se None, exporta todas as 64 bandas.
+        scale: resolução em metros (padrão 10, nativo do dataset)
+        output_path: caminho de saída para o GeoTIFF
+        progress_callback: função(progress_int, message_str)
+
+    Returns:
+        Caminho do arquivo salvo.
+    """
+    if not _gee_initialized:
+        raise RuntimeError("GEE não autenticado. Chame authenticate() primeiro.")
+
+    if not _check_token_valid():
+        raise RuntimeError(
+            "Token GEE expirado e não foi possível renovar. "
+            "Clique em 'Login GEE' novamente na interface."
+        )
+
+    # Bandas padrão: todas as 64 dimensões do embedding
+    if bands is None:
+        bands = [f"A{i:02d}" for i in range(64)]
+
+    def update(pct, msg):
+        if progress_callback:
+            progress_callback(pct, msg)
+        logger.info(f"[GEE Embedding] {pct}% - {msg}")
+
+    update(5, "Criando geometria da AOI...")
+    aoi = ee.Geometry(aoi_geojson)
+
+    update(10, "Carregando coleção Satellite Embedding V1 Annual...")
+    collection = (
+        ee.ImageCollection("GOOGLE/SATELLITE_EMBEDDING/V1/ANNUAL")
+        .filterBounds(aoi)
+        .filterDate(start_date, end_date)
+    )
+
+    update(20, "Verificando disponibilidade de tiles...")
+    count = collection.size().getInfo()
+    if count == 0:
+        raise RuntimeError(
+            f"Nenhum tile de embedding encontrado para a AOI no período "
+            f"{start_date} a {end_date}. O dataset cobre 2017–2024."
+        )
+    update(25, f"{count} tile(s) encontrado(s). Criando mosaico...")
+
+    # Tiles são em projeção UTM; mosaic() combina em uma única imagem.
+    # A projeção resultante será default (WGS84), mas ao exportar com
+    # crs e scale explícitos o GEE reprojeta corretamente.
+    composite = collection.select(bands).mosaic().clip(aoi)
+
+    update(50, "Gerando URL de download...")
+    try:
+        url = composite.getDownloadURL({
+            "scale": scale,
+            "crs": "EPSG:4326",
+            "region": aoi,
+            "format": "GEO_TIFF",
+            "filePerBand": False,
+            "maxPixels": 1e13,
+        })
+    except Exception as e:
+        raise RuntimeError(
+            f"Erro ao gerar download (área pode ser muito grande para download direto): {e}. "
+            "Tente reduzir a área de interesse ou usar resolução menor (ex: scale=20)."
+        )
+
+    update(60, "Baixando GeoTIFF...")
+    import requests
+
+    resp = requests.get(url, stream=True, timeout=600)
+    resp.raise_for_status()
+
+    total_size = int(resp.headers.get("content-length", 0))
+    downloaded = 0
+
+    with open(output_path, "wb") as f:
+        for chunk in resp.iter_content(chunk_size=8192):
+            f.write(chunk)
+            downloaded += len(chunk)
+            if total_size > 0:
+                dl_pct = int(60 + (downloaded / total_size) * 30)
+                update(min(dl_pct, 92), f"Baixando... {downloaded // 1024} KB")
+
+    update(94, "Recortando para o polígono exato da AOI...")
     from ..utils import clip_raster_to_geojson
     clip_raster_to_geojson(output_path, aoi_geojson, output_path)
 
