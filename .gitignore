@@ -2,3 +2,4 @@ venv/
 backend/__pycache__/
 frontend/node_modules/
 outputs/
+CLAUDE.md

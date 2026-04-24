@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:metadados.snirh.gov.br)",
+      "WebFetch(domain:developers.google.com)",
+      "WebFetch(domain:hge-iph.github.io)",
+      "Bash(venv/Scripts/python -c \"import asf_search; print\\(dir\\(asf_search.PRODUCT_TYPE\\)\\)\")",
+      "Bash(venv/Scripts/python -c \"import asf_search as asf; print\\(asf.PRODUCT_TYPE.RTC_HIGH_RES\\); print\\(asf.PRODUCT_TYPE.RTC_LOW_RES\\)\")",
+      "Bash(venv/Scripts/python -c \"import inspect, asf_search as asf; print\\(inspect.signature\\(asf.ASFSearchResults.download\\)\\)\")",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:docs.asf.alaska.edu)",
+      "WebFetch(domain:forum.earthdata.nasa.gov)",
+      "Bash(venv/Scripts/python -c ' *)"
+    ]
+  }
+}

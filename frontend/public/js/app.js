@@ -307,6 +307,7 @@ async function checkAuthStatus() {
     }
 }
 
+
 async function authGee() {
     const projectId = document.getElementById("geeProject").value.trim() || null;
     toast("Autenticando GEE... Verifique o terminal do backend e/ou o navegador.", "info");
@@ -424,19 +425,24 @@ function hideDeviceFlowInfo() {
 
 function onProviderChange() {
     const provider = document.getElementById("provider").value;
-    const isEmbedding = provider === "gee_embedding";
+    const isEmbedding  = provider === "gee_embedding";
+    const isAnadem     = provider === "snirh_anadem";
+    const noCloudNeeded = isEmbedding || isAnadem;
 
-    // Cloud prob: só GEE Sentinel
+    // Cloud prob threshold: exclusivo do GEE Sentinel
     document.getElementById("cloudProbContainer").style.display =
         provider === "gee_sentinel" ? "block" : "none";
 
-    // Max cloud: esconde para embedding (não usa cloud masking)
+    // Max cloud: oculto para provedores sem filtragem por nuvem
     document.getElementById("maxCloudContainer").style.display =
-        isEmbedding ? "none" : "block";
+        noCloudNeeded ? "none" : "block";
 
-    // Bandas: para embedding as 64 bandas são o padrão, campo menos relevante
+    // Bandas: oculto para ANADEM (banda única, sem escolha útil)
+    document.getElementById("bandsContainer").style.display =
+        isAnadem ? "none" : "block";
+
     const bandsInput = document.getElementById("bands");
-    const resInput = document.getElementById("resolution");
+    const resInput   = document.getElementById("resolution");
 
     const defaults = {
         gee_sentinel: { bands: "B2, B3, B4, B8", res: 10, hint: "" },
@@ -448,8 +454,15 @@ function onProviderChange() {
                 + "10m. Não requer cloud masking. Use datas anuais: ex. 2024-01-01 a 2025-01-01. "
                 + "Disponível de 2017 a 2024.",
         },
-        copernicus: { bands: "B02, B03, B04, B08", res: 10, hint: "" },
-        planetary:  { bands: "blue, green, red, nir08", res: 30, hint: "" },
+        copernicus:   { bands: "B02, B03, B04, B08", res: 10, hint: "" },
+        planetary:    { bands: "blue, green, red, nir08", res: 30, hint: "" },
+        snirh_anadem: {
+            bands: "elevation",
+            res: 30,
+            hint: "ANADEM — Modelo Digital de Terreno para a América do Sul (ANA/SNIRH), 30 m. "
+                + "Dataset estático: as datas informadas são ignoradas. "
+                + "Requer login GEE.",
+        },
     };
 
     const d = defaults[provider];
@@ -463,25 +476,24 @@ function onProviderChange() {
         hintEl.style.display = d?.hint ? "block" : "none";
     }
 
-    // Para embedding, sugere datas anuais se as atuais parecem sub-anuais
+    // Embedding: auto-ajusta datas para ano completo se necessário
     if (isEmbedding) {
         const startEl = document.getElementById("startDate");
-        const endEl = document.getElementById("endDate");
-        const start = startEl.value;
-        const end = endEl.value;
+        const endEl   = document.getElementById("endDate");
+        const start   = startEl.value;
+        const end     = endEl.value;
 
-        // Se o range é < 365 dias, sugere ajustar
         if (start && end) {
             const diffDays = (new Date(end) - new Date(start)) / (1000 * 60 * 60 * 24);
             if (diffDays < 360) {
-                // Auto-ajusta para ano completo baseado na data inicial
                 const year = new Date(start).getFullYear();
                 startEl.value = `${year}-01-01`;
-                endEl.value = `${year + 1}-01-01`;
+                endEl.value   = `${year + 1}-01-01`;
                 toast(`Embedding é anual — datas ajustadas para ${year}-01-01 → ${year + 1}-01-01`, "info");
             }
         }
     }
+
 }
 
 // ═══════════════════════════════════════════════════════
@@ -495,7 +507,7 @@ async function startProcessing() {
     }
 
     const provider = document.getElementById("provider").value;
-    const isEmbedding = provider === "gee_embedding";
+    const noCloudNeeded = ["gee_embedding", "snirh_anadem"].includes(provider);
     const startDate = document.getElementById("startDate").value;
     const endDate = document.getElementById("endDate").value;
     const bandsRaw = document.getElementById("bands").value.trim();
@@ -524,8 +536,8 @@ async function startProcessing() {
             end_date: endDate,
         };
 
-        // Cloud params só para provedores que usam
-        if (!isEmbedding) {
+        // Cloud params só para provedores com filtragem por nuvem
+        if (!noCloudNeeded) {
             body.max_cloud = maxCloud;
             body.cloud_prob_threshold = cloudProb;
         }

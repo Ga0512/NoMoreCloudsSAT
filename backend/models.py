@@ -4,7 +4,6 @@ Modelos Pydantic para requests e responses.
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 from enum import Enum
-from datetime import datetime
 
 
 class ProviderEnum(str, Enum):
@@ -13,6 +12,7 @@ class ProviderEnum(str, Enum):
     GEE_EMBEDDING = "gee_embedding"
     COPERNICUS = "copernicus"
     PLANETARY = "planetary"
+    SNIRH_ANADEM = "snirh_anadem"
 
 
 class JobStatus(str, Enum):
@@ -58,6 +58,8 @@ class AuthStatus(BaseModel):
     gee: bool = False
     copernicus: bool = False
     planetary: bool = True  # sempre autenticado (público)
+    snirh_anadem: bool = False
     gee_message: str = ""
     copernicus_message: str = ""
     planetary_message: str = "Acesso público, sem autenticação necessária."
+    snirh_anadem_message: str = ""

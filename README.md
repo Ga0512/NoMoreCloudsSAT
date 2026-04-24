@@ -1,13 +1,34 @@
-# 🛰️ Satellite Image Compositor
+# 🛰️ Satellite Image Compositor - NoMoreClouds
 
 WebApp local para download e composição de imagens de satélite com máscara de nuvem e mediana temporal.
 
-| Provedor | Satélite | Resolução | Autenticação |
-|----------|----------|-----------|--------------|
+![alt text](assets/image.png)
+
+| Provedor | Satélite / Produto | Resolução | Autenticação |
+|----------|--------------------|-----------|--------------|
 | Google Earth Engine | Sentinel-2 | 10m | Google OAuth |
 | Google Earth Engine | Landsat 8/9 | 30m | Google OAuth |
+| Google Earth Engine | AlphaEarth Embedding | 10m | Google OAuth |
 | Copernicus OpenEO | Sentinel-2 | 10m | OIDC Device Flow |
 | Planetary Computer | Landsat 8/9 | 30m | Nenhuma (público) |
+| **GEE — ANADEM** | **DTM América do Sul (ANA)** | **30m** | **Google OAuth** |
+
+---
+
+## ⭐ Update — Novo Provedor
+
+### 🏔️ ANADEM — Modelo Digital de Terreno (30m)
+
+ANADEM é um DTM (Modelo Digital de **Terreno**, sem vegetação) desenvolvido pela Agência Nacional de Águas (ANA/SNIRH) para toda a América do Sul, disponível como asset público no GEE.
+
+**Por que é útil?**
+- **Corrige o bias de vegetação** do Copernicus GLO-30 (o DEM mais usado globalmente), reduzindo o erro médio de 9,6 m para 1,5 m em áreas florestadas.
+- **Ideal para hidrologia** — delimitação de bacias, cálculo de declividade, análise de drenagem.
+- **Cobertura total do Brasil** e da América do Sul a 30m de resolução.
+- **Dataset estático** — não há dimensão temporal; as datas informadas são ignoradas.
+- Publicado com licença CC BY 4.0.
+
+> Requer login GEE. As datas informadas na interface são ignoradas (produto único, sem série temporal).
 
 ---
 
@@ -63,9 +84,11 @@ satellite-webapp/
 │   ├── jobs.py                 # Gerenciador de jobs
 │   ├── utils.py                # Utilitários (AOI, clip, shapefile)
 │   └── services/
-│       ├── gee.py              # Google Earth Engine
+│       ├── gee.py              # Google Earth Engine (Sentinel, Landsat, Embedding)
 │       ├── copernicus.py       # Copernicus OpenEO
-│       └── planetary.py        # Planetary Computer
+│       ├── planetary.py        # Planetary Computer
+│       ├── asf.py              # ALOS PALSAR SAR (via GEE)
+│       └── snirh.py            # ANADEM DTM Brasil (via GEE)
 ├── frontend/
 │   ├── package.json            # Deps Node.js
 │   ├── server.js               # Express (proxy + static)
@@ -135,3 +158,5 @@ Documentação interativa: **http://localhost:8000/docs**
 - **Copernicus OpenEO**: processamento é no servidor deles. Pode demorar, mas não usa sua máquina.
 - **Clip por polígono**: o GeoTIFF sai recortado no formato exato do polígono (shapefile), não como retângulo.
 - **Bandas**: cada provedor tem nomes diferentes. O padrão é RGB+NIR, mas você pode escolher qualquer combinação.
+- **PALSAR (ASF)**: DEM de 12,5 m — o dataset cobre 2006–2011. O download é feito via `asf_search` SDK (requer conta NASA Earthdata gratuita). A saída é o `_DEM.tif` mosaicado e recortado na AOI.
+- **ANADEM**: dataset estático; as datas informadas são aceitas pela interface mas ignoradas no processamento. Cobertura restrita à América do Sul.

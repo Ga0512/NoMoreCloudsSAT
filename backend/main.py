@@ -61,15 +61,18 @@ app.add_middleware(
 @app.get("/api/auth/status", response_model=AuthStatus)
 async def auth_status():
     """Retorna o status de autenticação de cada provedor."""
-    from .services import gee, copernicus, planetary
+    from .services import gee, copernicus, planetary, snirh
 
+    gee_ok = gee.is_authenticated()
     return AuthStatus(
-        gee=gee.is_authenticated(),
+        gee=gee_ok,
         copernicus=copernicus.is_authenticated(),
         planetary=planetary.is_authenticated(),
-        gee_message="Autenticado" if gee.is_authenticated() else "Não autenticado",
+        snirh_anadem=snirh.is_authenticated(),
+        gee_message="Autenticado" if gee_ok else "Não autenticado",
         copernicus_message="Autenticado" if copernicus.is_authenticated() else "Não autenticado",
         planetary_message="Acesso público (sempre disponível)",
+        snirh_anadem_message="Autenticado (via GEE)" if gee_ok else "Requer login GEE",
     )
 
 
@@ -208,7 +211,13 @@ async def start_processing(req: ProcessingRequest):
     # Verifica autenticação
     from .services import gee, copernicus
 
-    if provider in (ProviderEnum.GEE_SENTINEL, ProviderEnum.GEE_LANDSAT, ProviderEnum.GEE_EMBEDDING):
+    _gee_providers = (
+        ProviderEnum.GEE_SENTINEL,
+        ProviderEnum.GEE_LANDSAT,
+        ProviderEnum.GEE_EMBEDDING,
+        ProviderEnum.SNIRH_ANADEM,
+    )
+    if provider in _gee_providers:
         if not gee.is_authenticated():
             raise HTTPException(status_code=401, detail="GEE não autenticado.")
     elif provider == ProviderEnum.COPERNICUS:
@@ -234,6 +243,9 @@ async def start_processing(req: ProcessingRequest):
     elif provider == ProviderEnum.PLANETARY:
         bands = bands or DEFAULT_BANDS["planetary"]
         resolution = resolution or DEFAULT_RESOLUTION["planetary"]
+    elif provider == ProviderEnum.SNIRH_ANADEM:
+        bands = bands or DEFAULT_BANDS["snirh_anadem"]
+        resolution = resolution or DEFAULT_RESOLUTION["snirh_anadem"]
 
     # Normaliza GeoJSON
     try:
@@ -313,6 +325,18 @@ async def start_processing(req: ProcessingRequest):
                     bands=bands,
                     resolution=resolution,
                     max_cloud=req.max_cloud,
+                    output_path=output_path,
+                    progress_callback=progress_callback,
+                )
+
+            elif provider == ProviderEnum.SNIRH_ANADEM:
+                from .services import snirh
+                snirh.process_anadem(
+                    aoi_geojson=geometry,
+                    start_date=req.start_date,
+                    end_date=req.end_date,
+                    bands=bands,
+                    scale=resolution,
                     output_path=output_path,
                     progress_callback=progress_callback,
                 )

@@ -30,6 +30,7 @@ DEFAULT_BANDS = {
     "gee_embedding": [f"A{i:02d}" for i in range(64)],
     "copernicus": ["B02", "B03", "B04", "B08"],
     "planetary": ["blue", "green", "red", "nir08"],
+    "snirh_anadem": ["elevation"],
 }
 
 # Resoluções padrão
@@ -39,4 +40,8 @@ DEFAULT_RESOLUTION = {
     "gee_landsat": 30,
     "copernicus": 10,
     "planetary": 30,
+    "snirh_anadem": 30,
 }
+
+# ANADEM GEE asset
+ANADEM_ASSET_ID = "projects/et-brasil/assets/anadem/v1"
