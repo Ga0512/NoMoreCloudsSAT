@@ -87,7 +87,6 @@ satellite-webapp/
 │       ├── gee.py              # Google Earth Engine (Sentinel, Landsat, Embedding)
 │       ├── copernicus.py       # Copernicus OpenEO
 │       ├── planetary.py        # Planetary Computer
-│       ├── asf.py              # ALOS PALSAR SAR (via GEE)
 │       └── snirh.py            # ANADEM DTM Brasil (via GEE)
 ├── frontend/
 │   ├── package.json            # Deps Node.js
@@ -158,5 +157,4 @@ Documentação interativa: **http://localhost:8000/docs**
 - **Copernicus OpenEO**: processamento é no servidor deles. Pode demorar, mas não usa sua máquina.
 - **Clip por polígono**: o GeoTIFF sai recortado no formato exato do polígono (shapefile), não como retângulo.
 - **Bandas**: cada provedor tem nomes diferentes. O padrão é RGB+NIR, mas você pode escolher qualquer combinação.
-- **PALSAR (ASF)**: DEM de 12,5 m — o dataset cobre 2006–2011. O download é feito via `asf_search` SDK (requer conta NASA Earthdata gratuita). A saída é o `_DEM.tif` mosaicado e recortado na AOI.
 - **ANADEM**: dataset estático; as datas informadas são aceitas pela interface mas ignoradas no processamento. Cobertura restrita à América do Sul.
